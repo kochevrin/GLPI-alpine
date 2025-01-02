@@ -1,0 +1,56 @@
+networks:
+  glpi-network:
+
+volumes:
+  mariadb-data:
+  glpi-files:
+  glpi-plugins:
+  glpi-config:
+
+services:
+  mariadb:
+    image: ${GLPI_MARIADB_IMAGE_TAG}
+    volumes:
+      - mariadb-data:/var/lib/mysql
+    environment:
+      MARIADB_DATABASE: ${GLPI_DB_NAME}
+      MARIADB_USER: ${GLPI_DB_USER}
+      MARIADB_PASSWORD: ${GLPI_DB_PASSWORD}
+      MARIADB_ROOT_PASSWORD: ${GLPI_DB_ADMIN_PASSWORD}
+    networks:
+      - glpi-network
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  glpi:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - glpi-files:/var/www/glpi/files/:rw
+      - glpi-plugins:/var/www/glpi/plugins/:rw
+      - glpi-config:/var/www/glpi/config/:rw
+
+    environment:
+      TZ: ${GLPI_TIMEZONE}
+    networks:
+      - glpi-network
+    ports:
+      - "8082:8080"
+    healthcheck:
+      test: curl --silent --fail http://127.0.0.1:8080/fpm-ping || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 90s
+    restart: unless-stopped
+    depends_on:
+      mariadb:
+        condition: service_healthy
