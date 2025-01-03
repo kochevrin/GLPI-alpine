@@ -28,7 +28,7 @@ shutdown() {
   exit
 }
 
-# JH addded on 12.10.2022
+# KK addded on 03.01.2025
 # Function only for GLPI
 # Verify folders
 VerifyDir () {
@@ -58,7 +58,7 @@ VerifyDir () {
   done
 }
 
-# JH addded on 12.10.2022
+# KK addded on 03.01.2025
 # Function only for GLPI
 # Set permissions
 SetPermissions () {
@@ -91,7 +91,7 @@ for script in $(find /docker-entrypoint-init.d/ -executable -type f); do
 done
 echo "Finished startup scripts in /docker-entrypoint-init.d"
 
-# JH addded on 12.10.2022
+# KK addded on 03.01.2025
 # Run function only for GLPI
 # ========= Start ==========
 VerifyDir

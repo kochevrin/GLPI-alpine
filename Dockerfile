@@ -16,7 +16,7 @@ LABEL org.label-schema.schema-version="1.0" \
       org.label-schema.build-date=$BUILD_DATE \
       org.label-schema.name=$NAME \
       org.label-schema.vcs-ref=$VCS_REF \
-      org.label-schema.vcs-url="https://github.com/johann8/" \
+      org.label-schema.vcs-url="https://github.com/kochevrin/" \
       org.label-schema.version=$VERSION
 
 
@@ -37,7 +37,7 @@ ENV MARIADB_USER glpi
 
 ENV MARIADB_PASSWORD glpi
 
-ENV TZ Europe/Berlin
+ENV TZ Europe/Kyiv
 
 ENV UPLOAD_MAX_FILESIZE 100M 
 
@@ -121,6 +121,16 @@ RUN apk --no-cache add \
 #COPY --chown=nobody rootfs/ /
 COPY rootfs/ /
 COPY scripts/backup.sh /bin/backup.sh
+
+# Set the owner and permissions
+RUN chmod 755 /bin/docker-entrypoint.sh \
+ && chmod -R 755 /docker-entrypoint-init.d \
+ && chmod 755 /bin/backup.sh \
+ && chmod 755 /etc/nginx /etc/php82 /etc/service \
+ && chmod 755 /etc/service/cron /etc/service/nginx /etc/service/php \
+ && chmod 644 /etc/nginx/nginx.conf \
+ && chmod 644 /etc/php82/conf.d/custom.ini /etc/php82/php-fpm.d/www.conf \
+ && chmod 755 /etc/service/cron/run /etc/service/nginx/run /etc/service/php/run
 
 # Set php option and rights
 RUN echo "session.cookie_httponly = On" >> /etc/php${PHP_VERSION}/conf.d/custom.ini
