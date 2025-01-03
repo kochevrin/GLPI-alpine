@@ -1,5 +1,32 @@
+# Create networks for your services before deploying the configuration using the commands:
+# `docker network create glpi-network`
+# Make sure that Traefik is running and the network npm-network exists. If not, you should start Traefik with the network `npm-network`
+# `docker network create npm-network`
+
+# Deploy GLPI using Docker Compose:
+# `docker compose -f glpi-npm-letsencrypt-docker-compose.yml -p glpi up -d --build`
+# Remove GLPI using Docker Compose:
+# `docker compose -f glpi-npm-letsencrypt-docker-compose.yml -p glpi down --rmi all`
+
+## After Installation Steps
+# docker exec -it glpi-glpi-1 sh
+# rm install/install.php
+
+# docker exec -it glpi-mariadb-1 bash
+# mariadb -uroot -p${MARIADB_ROOT_PASSWORD}
+# GRANT SELECT ON `mysql`.`time_zone_name` TO 'glpidbuser'@'%';
+# FLUSH PRIVILEGES;
+# \q
+# exit
+
+# docker exec -it glpi-glpi-1 sh
+# /usr/bin/php82 bin/console database:enable_timezones
+
 networks:
   glpi-network:
+    external: true
+  npm-network:
+    external: true
 
 volumes:
   mariadb-data:
@@ -42,6 +69,7 @@ services:
       TZ: ${GLPI_TIMEZONE}
     networks:
       - glpi-network
+      - npm-network
     ports:
       - "8082:8080"
     healthcheck:
