@@ -34,27 +34,9 @@ volumes:
   glpi-files:
   glpi-plugins:
   glpi-config:
+  mariadb-backups:
 
 services:
-  mariadb:
-    image: ${GLPI_MARIADB_IMAGE_TAG}
-    volumes:
-      - mariadb-data:/var/lib/mysql
-    environment:
-      MARIADB_DATABASE: ${GLPI_DB_NAME}
-      MARIADB_USER: ${GLPI_DB_USER}
-      MARIADB_PASSWORD: ${GLPI_DB_PASSWORD}
-      MARIADB_ROOT_PASSWORD: ${GLPI_DB_ADMIN_PASSWORD}
-    networks:
-      - glpi-network
-    healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 60s
-    restart: unless-stopped
-
   glpi:
     build:
       context: .
@@ -79,6 +61,50 @@ services:
       timeout: 5s
       retries: 3
       start_period: 90s
+    restart: unless-stopped
+    depends_on:
+      mariadb:
+        condition: service_healthy
+
+  mariadb:
+    image: ${GLPI_MARIADB_IMAGE_TAG}
+    volumes:
+      - mariadb-data:/var/lib/mysql
+    environment:
+      MARIADB_DATABASE: ${GLPI_DB_NAME}
+      MARIADB_USER: ${GLPI_DB_USER}
+      MARIADB_PASSWORD: ${GLPI_DB_PASSWORD}
+      MARIADB_ROOT_PASSWORD: ${GLPI_DB_ADMIN_PASSWORD}
+    networks:
+      - glpi-network
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  backups:
+    image: ${GLPI_MARIADB_IMAGE_TAG}
+    command: >-
+      sh -c 'sleep $BACKUP_INIT_SLEEP &&
+      while true; do
+        mariadb-dump -h mariadb -u $GLPI_DB_USER -p$GLPI_DB_PASSWORD $GLPI_DB_NAME | gzip > $BACKUPS_PATH/$GLPI_DB_NAME-$(date "+%Y-%m-%d_%H-%M").sql.gz &&
+        find $BACKUPS_PATH -type f -mtime +$BACKUP_PRUNE_DAYS | xargs rm -f &&
+        sleep $BACKUP_INTERVAL; done'
+    volumes:
+      - mariadb-backups:${BACKUPS_PATH}
+    environment:
+      GLPI_DB_NAME: ${GLPI_DB_NAME}
+      GLPI_DB_USER: ${GLPI_DB_USER}
+      GLPI_DB_PASSWORD: ${GLPI_DB_PASSWORD}
+      BACKUP_INIT_SLEEP: ${BACKUP_INIT_SLEEP}
+      BACKUP_INTERVAL: ${BACKUP_INTERVAL}
+      BACKUP_PRUNE_DAYS: ${BACKUP_PRUNE_DAYS}
+      BACKUPS_PATH: ${BACKUPS_PATH}
+    networks:
+      - glpi-network
     restart: unless-stopped
     depends_on:
       mariadb:
