@@ -120,13 +120,11 @@ RUN apk --no-cache add \
 # Add configuration files
 #COPY --chown=nobody rootfs/ /
 COPY rootfs/ /
-COPY scripts/backup.sh /bin/backup.sh
 
 # Set the owner and permissions
 RUN chmod 755 /bin/docker-entrypoint.sh \
  && chmod -R 755 /docker-entrypoint-init.d \
- && chmod 755 /bin/backup.sh \
- && chmod 755 /etc/nginx /etc/php82 /etc/service \
+  && chmod 755 /etc/nginx /etc/php82 /etc/service \
  && chmod 755 /etc/service/cron /etc/service/nginx /etc/service/php \
  && chmod 644 /etc/nginx/nginx.conf \
  && chmod 644 /etc/php82/conf.d/custom.ini /etc/php82/php-fpm.d/www.conf \
